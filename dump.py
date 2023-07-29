@@ -349,6 +349,7 @@ class BinaryArray(namedtuple('BinaryArray', 'ObjectId BinaryArrayTypeEnum Rank L
             obj = read_typed_member(f, self.TypeEnum, self.AdditionalTypeInfo)
             if isinstance(obj, (ObjectNullMultiple, ObjectNullMultiple256)):
                 i += obj.NullCount
+                data.append([None] * obj.NullCount)
             else:
                 i += 1
             data.append(obj)
