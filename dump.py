@@ -352,7 +352,7 @@ class BinaryArray(namedtuple('BinaryArray', 'ObjectId BinaryArrayTypeEnum Rank L
                 data.append([None] * obj.NullCount)
             else:
                 i += 1
-            data.append(obj)
+                data.append(obj)
         return data
 
     def __str__(self):
@@ -375,6 +375,9 @@ class ArraySinglePrimitive(namedtuple('ArraySinglePrimitive', 'ArrayInfo Primiti
         return ret
 
     def read_arraydata(self, f):
+        if self.PrimitiveTypeEnum == PrimitiveType.Byte:
+            # Shortcut for files
+            return f.read(self.ArrayInfo.Length)
         return [read_primitive(f, self.PrimitiveTypeEnum) for _ in range(self.ArrayInfo.Length)]
 
     def __str__(self):
