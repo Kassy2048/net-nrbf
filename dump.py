@@ -297,6 +297,11 @@ class ObjectNull(namedtuple('ObjectNull', '')):
     def fromfile(cls, f):
         return cls()
 
+class MessageEnd(namedtuple('MessageEnd', '')):
+    @classmethod
+    def fromfile(cls, f):
+        return cls()
+
 class ObjectNullMultiple(namedtuple('ObjectNullMultiple', 'NullCount')):
     @classmethod
     def fromfile(cls, f):
@@ -443,6 +448,8 @@ def dump_file(f):
             print("@%d" % f.tell())
             record = read_record(f)
             dump_record(record, 2)
+            if isinstance(record, MessageEnd):
+                break
         except EOFError:
             break
         except Exception as e:
