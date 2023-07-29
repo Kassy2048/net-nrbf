@@ -426,6 +426,10 @@ def read_primitive(f, type):
         return readstruct(f, 'Q')[0]
     elif type == PrimitiveType.Int64:
         return readstruct(f, 'q')[0]
+    elif type == PrimitiveType.Double:
+        return readstruct(f, 'd')[0]
+    elif type == PrimitiveType.Single:
+        return readstruct(f, 'f')[0]
     elif type == PrimitiveType.DateTime:
         val = readstruct(f, 'Q')[0]
 
