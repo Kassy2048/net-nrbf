@@ -283,6 +283,13 @@ class MemberReference(namedtuple('MemberReference', 'IdRef')):
     def fromfile(cls, f):
         return cls(*readstruct(f, 'i'))
 
+class MemberPrimitiveTyped(namedtuple('MemberPrimitiveTyped', 'PrimitiveTypeEnum Value')):
+    @classmethod
+    def fromfile(cls, f):
+        type = PrimitiveType(ord(f.read(1)))
+        value = read_primitive(f, type)
+        return cls(type, value)
+
 class BinaryObjectString(namedtuple('BinaryObjectString', 'ObjectId Value')):
     @classmethod
     def fromfile(cls, f):
