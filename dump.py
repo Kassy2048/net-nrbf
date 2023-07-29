@@ -380,6 +380,35 @@ class ArraySinglePrimitive(namedtuple('ArraySinglePrimitive', 'ArrayInfo Primiti
         memberstr = ', '.join(str(d) for d in self.arraydata)
         return '%r = [%s]' % (self, memberstr)
 
+class ArraySingleObject(namedtuple('ArraySingleObject', 'ArrayInfo')):
+    @classmethod
+    def fromfile(cls, f):
+        arrinfo = ArrayInfo.fromfile(f)
+        ret = cls(arrinfo)
+        OBJECTS[arrinfo.ObjectId] = ret
+        ret.arraydata = ret.read_arraydata(f)
+        return ret
+
+    def read_arraydata(self, f):
+        array = []
+        while len(array) < self.ArrayInfo.Length:
+            record = read_record(f)
+
+            if isinstance(record, BinaryLibrary):
+                pass
+            elif isinstance(record, (ObjectNullMultiple, ObjectNullMultiple256)):
+                array += [None] * record.NullCount
+            else:
+                array.append(record)
+        return array
+
+    def __str__(self):
+        memberstr = ', '.join(str(d) for d in self.arraydata)
+        return '%r = [%s]' % (self, memberstr)
+
+class ArraySingleString(ArraySingleObject):
+    pass
+
 def read_primitive(f, type):
     if type == PrimitiveType.Boolean:
         return bool(readstruct(f, 'b')[0])
