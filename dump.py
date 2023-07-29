@@ -150,7 +150,9 @@ class ClassWithMembersAndTypes(namedtuple('ClassWithMembersAndTypes', 'ClassInfo
         mi = self.MemberTypeInfo
         return [read_typed_member(f, mi.BinaryTypeEnums[i], mi.AdditionalInfos[i]) for i in range(self.ClassInfo.MemberCount)]
 
-    def format_member(self, i):
+    def format_member(self, i, memberdata=None):
+        if memberdata is None:
+            memberdata = self.memberdata
         type = self.MemberTypeInfo.BinaryTypeEnums[i]
         info = self.MemberTypeInfo.AdditionalInfos[i]
         if type == BinaryType.Class:
@@ -163,7 +165,7 @@ class ClassWithMembersAndTypes(namedtuple('ClassWithMembersAndTypes', 'ClassInfo
             t = info.name + '[]'
         else:
             t = type.name
-        return t + ' ' + self.ClassInfo.MemberNames[i] + '\n' + indentstr(str(self.memberdata[i]), 4)
+        return t + ' ' + self.ClassInfo.MemberNames[i] + '\n' + indentstr(str(memberdata[i]), 4)
 
     def __str__(self):
         ci = self.ClassInfo
@@ -183,8 +185,10 @@ class ClassWithMembers(namedtuple('ClassWithMembers', 'ClassInfo LibraryId')):
     def read_members(self, f):
         return [read_unknown_member(f, self.ClassInfo.Name, self.ClassInfo.MemberNames[i]) for i in range(self.ClassInfo.MemberCount)]
 
-    def format_member(self, i):
-        return self.ClassInfo.MemberNames[i] + ' = ' + str(self.memberdata[i])
+    def format_member(self, i, memberdata=None):
+        if memberdata is None:
+            memberdata = self.memberdata
+        return self.ClassInfo.MemberNames[i] + ' = ' + str(memberdata[i])
 
     def __str__(self):
         ci = self.ClassInfo
@@ -203,8 +207,46 @@ class SystemClassWithMembers(namedtuple('SystemClassWithMembers', 'ClassInfo')):
     def read_members(self, f):
         return read_system_class_members(f, self.ClassInfo.Name)
 
-    def format_member(self, i):
-        return self.ClassInfo.MemberNames[i] + ' = ' + str(self.memberdata[i])
+    def format_member(self, i, memberdata=None):
+        if memberdata is None:
+            memberdata = self.memberdata
+        return self.ClassInfo.MemberNames[i] + ' = ' + str(memberdata[i])
+
+    def __str__(self):
+        ci = self.ClassInfo
+        memberstr = indentstr('\n'.join(self.format_member(i) for i in range(ci.MemberCount)), 4)
+        return '%s ObjectId=%d Name=%s:\n%s' % (type(self).__name__, ci.ObjectId, ci.Name, memberstr)
+
+class SystemClassWithMembersAndTypes(namedtuple('SystemClassWithMembersAndTypes', 'ClassInfo MemberTypeInfo')):
+    @classmethod
+    def fromfile(cls, f):
+        classinfo = ClassInfo.fromfile(f)
+        memberinfo = MemberTypeInfo.fromfile(f, classinfo)
+        ret = cls(classinfo, memberinfo)
+        OBJECTS[classinfo.ObjectId] = ret
+        ret.memberdata = ret.read_members(f)
+        return ret
+
+    def read_members(self, f):
+        mi = self.MemberTypeInfo
+        return [read_typed_member(f, mi.BinaryTypeEnums[i], mi.AdditionalInfos[i]) for i in range(self.ClassInfo.MemberCount)]
+
+    def format_member(self, i, memberdata=None):
+        if memberdata is None:
+            memberdata = self.memberdata
+        type = self.MemberTypeInfo.BinaryTypeEnums[i]
+        info = self.MemberTypeInfo.AdditionalInfos[i]
+        if type == BinaryType.Class:
+            t = info.TypeName
+        elif type == BinaryType.SystemClass:
+            t = info
+        elif type == BinaryType.Primitive:
+            t = info.name
+        elif type == BinaryType.PrimitiveArray:
+            t = info.name + '[]'
+        else:
+            t = type.name
+        return t + ' ' + self.ClassInfo.MemberNames[i] + '\n' + indentstr(str(memberdata[i]), 4)
 
     def __str__(self):
         ci = self.ClassInfo
@@ -229,7 +271,7 @@ class ClassWithId(namedtuple('ClassWithId', 'ObjectId MetadataId')):
         return self.classref.read_members(f)
 
     def format_member(self, i):
-        return self.classref.format_member(i)
+        return self.classref.format_member(i, self.memberdata)
 
     def __str__(self):
         ci = self.ClassInfo
